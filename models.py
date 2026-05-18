@@ -1,17 +1,4 @@
-from pydantic import BaseModel
-from typing import Optional
+from decimal import Decimal, ROUND_DOWN
 
-class Account(BaseModel):
-    id: int
-    name: str
-    auto_swap_enabled: bool
-
-class SwapHistory(BaseModel):
-    direction: str
-    input_amount: str
-    output_amount: str
-    status: str
-    executed_at: str
-
-class GasThreshold(BaseModel):
-    threshold: Optional[float]
+def format_decimal(value):
+    return Decimal(value).quantize(Decimal("0.0000000001"), rounding=ROUND_DOWN)
