@@ -1,5 +1,4 @@
-supabase
 fastapi
 uvicorn
-asyncio
-cantex_sdk
+supabase
+git+https://github.com/caviarnine/cantex_sdk.git#egg=cantex_sdk
