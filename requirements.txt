@@ -2,5 +2,4 @@ supabase
 fastapi
 uvicorn
 asyncio
-decimal
 cantex_sdk
