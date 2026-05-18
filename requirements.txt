@@ -1,4 +1,6 @@
+supabase
 fastapi
 uvicorn
-psycopg[binary]
+asyncio
+decimal
 cantex_sdk
