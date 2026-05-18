@@ -1,32 +1,36 @@
-import psycopg
-from psycopg.rows import dict_row
-from config import DATABASE_URL
+from supabase import create_client
+from config import SUPABASE_URL, SUPABASE_KEY
 
-def db_connect():
-    return psycopg.connect(DATABASE_URL, autocommit=True)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def fetch_active_accounts():
-    with db_connect() as conn, conn.cursor(row_factory=dict_row) as cur:
-        cur.execute("""
-            SELECT id, name, operator_key, trading_key, auto_swap_enabled
-            FROM accounts
-            WHERE is_active = TRUE
-        """)
-        return list(cur.fetchall())
+def get_accounts():
+    return supabase.table("accounts").select("*").execute().data
 
-def fetch_swap_history(account_id: int):
-    with db_connect() as conn, conn.cursor(row_factory=dict_row) as cur:
-        cur.execute("""
-            SELECT direction, input_amount, output_amount, status, executed_at
-            FROM swap_history
-            WHERE account_id = %s
-            ORDER BY executed_at DESC
-            LIMIT 50
-        """, (account_id,))
-        return list(cur.fetchall())
+def get_threshold():
+    result = supabase.table("global_settings").select("gas_threshold").execute().data
+    return float(result[0]["gas_threshold"]) if result else 0.0
 
-def fetch_global_gas_threshold():
-    with db_connect() as conn, conn.cursor() as cur:
-        cur.execute("SELECT gas_threshold FROM global_settings WHERE id = 1")
-        row = cur.fetchone()
-        return float(row[0]) if row and row[0] is not None else None
+def log_swap(account_id, account_name, direction, input_amount, input_symbol,
+             output_amount, output_symbol, price, status, network_fee):
+    supabase.table("swap_history").insert({
+        "account_id": account_id,
+        "account_name": account_name,
+        "direction": direction,
+        "input_amount": f"{input_amount:.10f}",
+        "input_symbol": input_symbol,
+        "output_amount": f"{output_amount:.10f}",
+        "output_symbol": output_symbol,
+        "price": f"{price:.10f}",
+        "status": status,
+        "network_fee": f"{network_fee:.10f}"
+    }).execute()
+
+def add_account(account_name, operator_key, trading_key):
+    return supabase.table("accounts").insert({
+        "account_name": account_name,
+        "operator_key": operator_key,
+        "trading_key": trading_key
+    }).execute()
+
+def remove_account(account_id):
+    return supabase.table("accounts").delete().eq("id", account_id).execute()
